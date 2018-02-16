@@ -6,10 +6,11 @@ import xlrd
 from copy import deepcopy
 
 from models.File_DB import File_DB
-from models.TransactionHistory_Model import TransactionHistory_Model
+from models.Transaction import Transaction
 from models.PriceLog_Model import PriceLog_Model
 
-from helpers import file_helper, time_converter, xlsx_to_json_parser
+from helpers import file_helper
+from transaction import transaction_converter ,binance_transaction
 
 
 def getFileSystem(args):
@@ -65,38 +66,14 @@ def getFileSystem(args):
 
 
 def readTransactionHistory(file_database, base_model):
-	transaction_list = []
+	file_name = file_database.getTransactionHistory_Xlsx()
+	(ret_code, transaction_list) = binance_transaction.readTransactionHistory(file_name, base_model)
 
-	transaction_workbook = xlrd.open_workbook(file_database.getTransactionHistory_Xlsx())
-	sheetNames = transaction_workbook.sheet_names()
+	if ret_code is 0:
+		return (0 , transaction_list)
+	else:
+		return (1, transaction_list)
 
-	for (index,sheet_name) in enumerate(sheetNames):
-		sheet_data = transaction_workbook.sheet_by_index(index)
-		sheet_header = [str(x).upper() for x in sheet_data.row_values(0)]
-
-		(ret_code, transactions) = xlsx_to_json_parser.processTransactionSheet(
-			source_header = sheet_header,
-			source_sheet = sheet_data, 
-			vendor = sheet_name.upper(),
-			base_model=base_model)
-
-		if ret_code is 0:
-			return (0 , transactions)
-		else:
-			transaction_list.extend(transactions)
-
-	#Sort transaction_list based on Date
-	transaction_list = xlsx_to_json_parser.sortTransactionList(
-		transaction_list = transaction_list, 
-		field = "Date".upper())
-
-	return (1, transaction_list)
-
-	# (ret_code, ex) = file_helper.write_dict_json_file(file_name='transaction_history.json', data=transaction_list)
-
-	# if ret_code is 0:
-	# 	print "Error while writing file"
-	# 	print ex
 
 def findNewTransactions(file_database, transaction_list):
 	(ret_code, current_list) = file_helper.read_json_file_dict(file_name=file_database.getTransactionHistoryFile())
@@ -113,22 +90,26 @@ def findNewTransactions(file_database, transaction_list):
 
 	return (1, None)
 
-def setupHeaders():
-	global transaction_entry
-	global transaction_vendor_list
-	global transaction_allowed_types
+# def setupHeaders():
+# 	global transaction_entry
+# 	global transaction_vendor_list
+# 	global transaction_allowed_types
 
-	try:
-		transaction_header = Transaction_History_Model.getAllData()
-		transaction_entry = transaction_header["transaction_entry".upper()]
-		transaction_vendor_list = transaction_header["vendor_list".upper()]
-		transaction_allowed_types = transaction_header["allowed_types".upper()]
+# 	try:
+# 		transaction_header = Transaction_History_Model.getAllData()
+# 		transaction_entry = transaction_header["transaction_entry".upper()]
+# 		transaction_vendor_list = transaction_header["vendor_list".upper()]
+# 		transaction_allowed_types = transaction_header["allowed_types".upper()]
 
-		return (1, None)
+# 		return (1, None)
 
-	except Exception as e:
-		print "Transaction header keys are invalid"
-		return (0, e)
+# 	except Exception as e:
+# 		print "Transaction header keys are invalid"
+# 		return (0, e)
+
+# def creatCoin(transaction_list):
+# 	for transaction in transaction_list:
+# 		print transaction
 
 
 if __name__ == '__main__':
@@ -148,20 +129,34 @@ if __name__ == '__main__':
 
 	print file_database.getFileDatagram()
 
-	(ret_code, transaction_list) = readTransactionHistory(file_database=file_database, base_model=TransactionHistory_Model())
+	(ret_code, transaction_list) = readTransactionHistory(file_database=file_database, base_model=Transaction)
 
 	if ret_code is 0:
 		print "Error while reading Transaction History Xlsx File"
 		print transaction_list
 
-	# print transaction_list
+	(depo, withd, trade) = (0,0,0)
 
-	(ret_code, new_transactions) = findNewTransactions(file_database=file_database, transaction_list=transaction_list)
-	if ret_code is 0:
-		print "Error while reading Program data transaction history"
-		print new_transactions
+	for item in transaction_list:
+		item = item.getTransactionEntry()
+		if item['TYPE'] == "DEPOSIT":
+			depo = depo+1
+		elif item['TYPE'] == "WITHDRAWAL":
+			withd = withd+1
+		elif item['TYPE'] == "TRADE":
+			trade = trade+1
 
-	print new_transactions
+	print len(transaction_list)
+	print transaction_list[-1].getTransactionEntry()
+	print depo, withd, trade
+
+	# (ret_code, new_transactions) = findNewTransactions(file_database=file_database, transaction_list=transaction_list)
+	# if ret_code is 0:
+	# 	print "Error while reading Program data transaction history"
+	# 	print new_transactions
+
+	# print new_transactions
+	# creatCoin(new_transactions)
 
 
 
