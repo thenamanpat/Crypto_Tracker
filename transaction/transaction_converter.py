@@ -53,11 +53,11 @@ def sortTransactionList(transaction_list):
 	to_return = sorted(transaction_list, 
 		key=lambda x: x.getDate())
 
-	counter = 0
+	# counter = 0
 
-	for i in range(len(to_return)):
-		to_return[i].setID(counter)
-		counter += 1
+	# for i in range(len(to_return)):
+	# 	to_return[i].setID(counter)
+	# 	counter += 1
 
 	return to_return
 

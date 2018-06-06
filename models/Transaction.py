@@ -4,7 +4,8 @@ import datetime
 class Transaction(object):
 	
 	transaction_entry = {
-		"ID" : 0, 
+		# "ID" : 0,
+		"TXID" : 0, 
 
 		"DATE" : "", #EDT
 		"TYPE" : "",
@@ -55,8 +56,8 @@ class Transaction(object):
 	# def getAllData():
 	# 	return Transaction.json_data
 
-	def setID(self, ID):
-		self.transaction["ID"] = ID
+	def setTXID(self, txid):
+		self.transaction["TXID"] = txid
 	
 	def getTransactionEntry(self):
 		return self.transaction
@@ -76,7 +77,7 @@ class Transaction(object):
 
 		self.transaction["DATE"] = date
 		self.transaction["TYPE"] = ttype
-
+		
 		self.transaction["BUY"] =  buy
 		self.transaction["BUY_CUR"] =  buy_cur
 
